@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual Vocabulary Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card-flip {
+            transition: all 0.3s ease;
+        }
+        .card-flip:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Multilingual Vocabulary</h1>
+            <p class="text-gray-600">Click the card to reveal the answer</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div class="flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex gap-2">
+                    <select id="studyMode" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Languages</option>
+                        <option value="german">German Only</option>
+                        <option value="french">French Only</option>
+                        <option value="spanish">Spanish Only</option>
+                    </select>
+                    <button id="shuffleBtn" class="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors">
+                        🔀 Shuffle
+                    </button>
+                    <button id="resetBtn" class="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+                        🔄 Reset
+                    </button>
+                </div>
+                
+                <div class="flex gap-4 text-sm">
+                    <span class="text-green-600" id="correctCount">✓ 0</span>
+                    <span class="text-red-600" id="incorrectCount">✗ 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">Progress</span>
+                <span class="text-sm text-gray-600" id="progressText">1 / 300</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Flashcard -->
+        <div class="relative mb-6">
+            <div id="flashcard" class="card-flip bg-white rounded-xl shadow-lg p-8 min-h-[300px] flex flex-col justify-center items-center cursor-pointer"
+                 style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+                <div class="text-center">
+                    <div id="cardText" class="text-3xl font-bold text-white mb-4">erhältlich</div>
+                    <div id="cardLanguage" class="text-lg text-white opacity-80">German</div>
+                    <div id="clickHint" class="mt-4 text-white opacity-60 text-sm">Click to reveal answer</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation and Scoring -->
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex justify-between items-center mb-4">
+                <button id="prevBtn" class="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+                    ← Previous
+                </button>
+                
+                <button id="nextBtn" class="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+                    Next →
+                </button>
+            </div>
+            
+            <div id="scoringButtons" class="flex gap-4 justify-center" style="display: none;">
+                <button id="hardBtn" class="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                    ✗ Hard
+                </button>
+                <button id="easyBtn" class="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
+                    ✓ Easy
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="mt-6 bg-white rounded-lg shadow-md p-4">
+            <h3 class="text-lg font-semibold mb-3">Study Statistics</h3>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="bg-green-50 p-3 rounded-lg">
+                    <div id="correctStat" class="text-2xl font-bold text-green-600">0</div>
+                    <div class="text-sm text-green-600">Correct</div>
+                </div>
+                <div class="bg-red-50 p-3 rounded-lg">
+                    <div id="incorrectStat" class="text-2xl font-bold text-red-600">0</div>
+                    <div class="text-sm text-red-600">Needs Review</div>
+                </div>
+            </div>
+            <div id="accuracy" class="mt-3 text-center text-gray-600" style="display: none;"></div>
+        </div>
+
+        <!-- Language Distribution -->
+        <div class="mt-6 bg-white rounded-lg shadow-md p-4">
+            <h3 class="text-lg font-semibold mb-3">Vocabulary Collection</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                <div class="bg-blue-50 p-2 rounded text-center">
+                    <div id="germanCount" class="font-semibold text-blue-600">0</div>
+                    <div class="text-blue-600">German</div>
+                </div>
+                <div class="bg-purple-50 p-2 rounded text-center">
+                    <div id="frenchCount" class="font-semibold text-purple-600">0</div>
+                    <div class="text-purple-600">French</div>
+                </div>
+                <div class="bg-orange-50 p-2 rounded text-center">
+                    <div id="spanishCount" class="font-semibold text-orange-600">0</div>
+                    <div class="text-orange-600">Spanish</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded text-center">
+                    <div id="otherCount" class="font-semibold text-gray-600">0</div>
+                    <div class="text-gray-600">Other</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Flashcard data
+        const flashcards = [
+            { front: "erhältlich", back: "available", language: "German" },
+            { front: "sehr", back: "very", language: "German" },
+            { front: "klagen", back: "to complain", language: "German" },
+            { front: "schaffen", back: "to create", language: "German" },
+            { front: "verstehen", back: "to understand", language: "German" },
+            { front: "aussi", back: "also", language: "French" },
+            { front: "agir", back: "to act", language: "French" },
+            { front: "gérer", back: "to manage", language: "French" },
+            { front: "temprano", back: "early", language: "Spanish" },
+            { front: "boda", back: "wedding", language: "Spanish" },
+            { front: "dikmek", back: "to plant", language: "Turkish" }
+        ];
+
+        // App state
+        let currentIndex = 0;
+        let isFlipped = false;
+        let studyMode = 'all';
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let filteredCards = [...flashcards];
+
+        // DOM elements
+        const flashcard = document.getElementById('flashcard');
+        const cardText = document.getElementById('cardText');
+        const cardLanguage = document.getElementById('cardLanguage');
+        const clickHint = document.getElementById('clickHint');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const scoringButtons = document.getElementById('scoringButtons');
+        const studyModeSelect = document.getElementById('studyMode');
+
+        // Initialize app
+        function init() {
+            updateLanguageCounts();
+            updateCard();
+            updateProgress();
+            
+            // Event listeners
+            flashcard.addEventListener('click', flipCard);
+            document.getElementById('prevBtn').addEventListener('click', previousCard);
+            document.getElementById('nextBtn').addEventListener('click', nextCard);
+            document.getElementById('shuffleBtn').addEventListener('click', shuffleCards);
+            document.getElementById('resetBtn').addEventListener('click', resetProgress);
+            document.getElementById('hardBtn').addEventListener('click', () => markCard(false));
+            document.getElementById('easyBtn').addEventListener('click', () => markCard(true));
+            studyModeSelect.addEventListener('change', changeStudyMode);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    flipCard();
+                } else if (e.code === 'ArrowLeft') {
+                    previousCard();
+                } else if (e.code === 'ArrowRight') {
+                    nextCard();
+                } else if (e.code === 'Digit1' && isFlipped) {
+                    markCard(false);
+                } else if (e.code === 'Digit2' && isFlipped) {
+                    markCard(true);
+                }
+            });
+        }
+
+        function filterCards() {
+            if (studyMode === 'all') {
+                filteredCards = [...flashcards];
+            } else {
+                filteredCards = flashcards.filter(card => card.language.toLowerCase() === studyMode);
+            }
+        }
+
+        function updateCard() {
+            if (filteredCards.length === 0) return;
+            
+            const card = filteredCards[currentIndex];
+            if (isFlipped) {
+                cardText.textContent = card.back;
+                cardLanguage.textContent = 'English';
+                flashcard.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                clickHint.style.display = 'none';
+                scoringButtons.style.display = 'flex';
+            } else {
+                cardText.textContent = card.front;
+                cardLanguage.textContent = card.language;
+                flashcard.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                clickHint.style.display = 'block';
+                scoringButtons.style.display = 'none';
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentIndex + 1) / filteredCards.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = `✓ ${correctCount}`;
+            document.getElementById('incorrectCount').textContent = `✗ ${incorrectCount}`;
+            document.getElementById('correctStat').textContent = correctCount;
+            document.getElementById('incorrectStat').textContent = incorrectCount;
+            
+            const total = correctCount + incorrectCount;
+            if (total > 0) {
+                const accuracy = Math.round((correctCount / total) * 100);
+                document.getElementById('accuracy').textContent = `Accuracy: ${accuracy}%`;
+                document.getElementById('accuracy').style.display = 'block';
+            } else {
+                document.getElementById('accuracy').style.display = 'none';
+            }
+        }
+
+        function updateLanguageCounts() {
+            const germanCount = flashcards.filter(c => c.language === 'German').length;
+            const frenchCount = flashcards.filter(c => c.language === 'French').length;
+            const spanishCount = flashcards.filter(c => c.language === 'Spanish').length;
+            const otherCount = flashcards.filter(c => !['German', 'French', 'Spanish'].includes(c.language)).length;
+            
+            document.getElementById('germanCount').textContent = germanCount;
+            document.getElementById('frenchCount').textContent = frenchCount;
+            document.getElementById('spanishCount').textContent = spanishCount;
+            document.getElementById('otherCount').textContent = otherCount;
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            updateCard();
+        }
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % filteredCards.length;
+            isFlipped = false;
+            updateCard();
+            updateProgress();
+        }
+
+        function previousCard() {
+            currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+            isFlipped = false;
+            updateCard();
+            updateProgress();
+        }
+
+        function shuffleCards() {
+            for (let i = filteredCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+            }
+            currentIndex = 0;
+            isFlipped = false;
+            updateCard();
+            updateProgress();
+        }
+
+        function resetProgress() {
+            currentIndex = 0;
+            isFlipped = false;
+            correctCount = 0;
+            incorrectCount = 0;
+            filterCards();
+            updateCard();
+            updateProgress();
+            updateStats();
+        }
+
+        function markCard(isCorrect) {
+            if (isCorrect) {
+                correctCount++;
+            } else {
+                incorrectCount++;
+            }
+            updateStats();
+            setTimeout(nextCard, 500);
+        }
+
+        function changeStudyMode() {
+            studyMode = studyModeSelect.value;
+            currentIndex = 0;
+            isFlipped = false;
+            filterCards();
+            updateCard();
+            updateProgress();
+        }
+
+        // Initialize when page loads
+        init();
+    </script>
+</body>
+</html>
